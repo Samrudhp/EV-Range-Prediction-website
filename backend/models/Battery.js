@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 
-const batterySchema = new mongoose.Schema({
-    user : {
-        type : Schema.Types.ObjectId,
-        ref : 'User'
+const batterySchema = mongoose.Schema(
+    {
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+      batteryLevel: { type: Number, required: true },
     },
-    batteryLevel : Number,
-    chargingStatus : Boolean,
-});
+    { timestamps: true }
+  );
 
 module.exports = mongoose.model('Battery',batterySchema);
