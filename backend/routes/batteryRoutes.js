@@ -1,8 +1,13 @@
-const express = require('express');
-const { registerUser, loginUser, getUserProfile } = require('../controllers/userController');
-const { protect } = require('../middleware/authMiddleware');
+const express = require("express");
+const { updateBatteryStatus, getBatteryStatus } = require("../controllers/batteryController");
+const { protect } = require("../middleware/authMiddleware");
+
 const router = express.Router();
-router.post('/register', registerUser);
-router.post('/login', loginUser);
-router.get('/profile', protect, getUserProfile);
+
+// Update battery status (protected)
+router.post("/update", protect, updateBatteryStatus);
+
+// Get battery status (protected)
+router.get("/status", protect, getBatteryStatus);
+
 module.exports = router;
