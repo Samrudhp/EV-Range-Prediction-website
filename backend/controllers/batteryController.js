@@ -1,35 +1,57 @@
 const asyncHandler = require("express-async-handler");
 const Battery = require("../models/Battery");
 
-exports.getBatteryStatus = asyncHandler(async(req,res)=>{
-    try{
-        const battery = await Battery.find({
-            user : req.user.id
-        });
-        res.json(battery);
-    } catch (err){
-        res.status(404).json({
-            message : "cannot get battery status"
-        })
-    }
-});
+// backend/controllers/batteryController.js
+const Battery = require("../models/Battery");
 
-exports.updateBatteryStatus = asyncHandler(async(req,res)=>{
-   try{
-    const battery = await Battery.findOneAndUpdate(
-        {
-            user:req.user.id
-        },
-        req.body,
-        {
-            new : true,upsert:true
+// @desc    Update battery status
+// @route   POST /api/battery/update
+// @access  Private
+exports.updateBatteryStatus = async (req, res) => {
+    try {
+        const { batteryLevel, lastCharged, healthStatus } = req.body;
+
+        if (batteryLevel === undefined || !lastCharged || !healthStatus) {
+            return res.status(400).json({ message: "All fields are required" });
         }
-    );
-    res.json(battery);
-   } catch(err){
-    res.status(401).json({
-        message : "cannot update battery status",
-        error :err.message,
-    })
-   }
-});
+
+        let battery = await Battery.findOne({ user: req.user.id });
+
+        if (battery) {
+            battery.batteryLevel = batteryLevel;
+            battery.lastCharged = lastCharged;
+            battery.healthStatus = healthStatus;
+        } else {
+            battery = new Battery({
+                user: req.user.id,
+                batteryLevel,
+                lastCharged,
+                healthStatus
+            });
+        }
+
+        await battery.save();
+        res.status(200).json({ message: "Battery status updated", battery });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+// @desc    Get battery status
+// @route   GET /api/battery/status
+// @access  Private
+exports.getBatteryStatus = async (req, res) => {
+    try {
+        const battery = await Battery.findOne({ user: req.user.id });
+
+        if (!battery) {
+            return res.status(404).json({ message: "Battery data not found" });
+        }
+
+        res.status(200).json(battery);
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+
