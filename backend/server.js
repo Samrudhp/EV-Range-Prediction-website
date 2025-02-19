@@ -1,14 +1,10 @@
 const express = require('express')
-const app = express()
+const app = express();
+const cors = require('cors');
+
+app.use(cors());
+app.use(express.json());
+
 
 require('./config/db').dbconnect();
 
-app.get('/',(req,res)=>{
-    try{
-        res.send("Hello world");
-    }
-    catch(err){
-        console.log(err);
-    }
-    
-});
