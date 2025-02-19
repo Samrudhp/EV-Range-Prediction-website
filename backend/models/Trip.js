@@ -6,11 +6,13 @@ const tripSchema = new mongoose.Schema({
         type : Schema.Types.ObjectId,
         ref : 'User'
     },
-    startLocation : String,
-    endLocation : String,
-    distance : Number,
-    energyUsed : Number,
-}) ;
+    source: { type: String, required: true },
+    destination: { type: String, required: true },
+    distance: { type: Number, required: true },
+    batteryUsage: { type: Number, required: true },
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model('Trip',tripSchema);
 
