@@ -1,30 +1,39 @@
-const axios = require('axios');
+const axios = require("axios");
 
-// @desc    Get optimized route using OpenRouteService
-// @route   POST /api/maps/route
-// @access  Private
-exports.getOptimizedRoute = async (req, res) => {
+// @desc Get optimized EV route and range prediction
+// @route POST /api/maps/route
+// @access Private
+const getOptimizedRoute = async (req, res) => {
     try {
-        const { startCoords, endCoords } = req.body;
+        const { source, destination, trip_distance, elevation_change, traffic_delay, battery_consumption } = req.body;
 
-        if (!startCoords || !endCoords) {
-            return res.status(400).json({ message: "Start and end coordinates are required" });
+        // Validate input
+        if (!trip_distance || !elevation_change || !traffic_delay || !battery_consumption) {
+            return res.status(400).json({ message: "All input fields are required!" });
         }
 
-        const OPENROUTE_API_KEY = process.env.OPENROUTE_API_KEY;
-        const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${OPENROUTE_API_KEY}&start=${startCoords}&end=${endCoords}`;
+        // Call ML Model API
+        const mlResponse = await axios.post("http://localhost:8000/predict/", {
+            trip_distance,
+            elevation_change,
+            traffic_delay,
+            battery_consumption
+        });
 
-        const response = await axios.get(url);
+        // Extract predicted range from ML response
+        const { predicted_range_km } = mlResponse.data;
 
-        if (response.data && response.data.routes.length > 0) {
-            res.status(200).json({
-                route: response.data.routes[0],
-                message: "Route retrieved successfully",
-            });
-        } else {
-            res.status(404).json({ message: "No route found" });
-        }
+        res.json({
+            success: true,
+            source,
+            destination,
+            predicted_range: predicted_range_km
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
+        console.error("Error fetching ML prediction:", error.message);
+        res.status(500).json({ message: "Error fetching ML prediction" });
     }
 };
+
+module.exports = { getOptimizedRoute };

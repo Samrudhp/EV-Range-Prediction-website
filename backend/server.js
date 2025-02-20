@@ -6,7 +6,7 @@ app.use(cors());
 app.use(express.json());
 
 require('dotenv').config();
-require('./config/db').dbconnect();
+require('./config/db').connectDB();
 
 const userRoutes = require("./routes/userRoutes");
 const tripRoutes = require("./routes/tripRoutes");

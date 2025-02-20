@@ -1,5 +1,3 @@
-const asyncHandler = require("express-async-handler");
-const Battery = require("../models/Battery");
 
 // backend/controllers/batteryController.js
 const Battery = require("../models/Battery");

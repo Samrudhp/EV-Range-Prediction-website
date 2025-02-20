@@ -1,4 +1,4 @@
-const asyncHandler = require("express-async-handler");
+
 const Trip = require("../models/Trip");
 const User = require("../models/User");
 

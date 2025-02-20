@@ -3,7 +3,7 @@ const { errorHandler } = require('../middleware/errorHandler');
 
 const tripSchema = new mongoose.Schema({
     user :{
-        type : Schema.Types.ObjectId,
+        type : mongoose.Schema.Types.ObjectId,
         ref : 'User'
     },
     source: { type: String, required: true },
