@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import BatteryCard from "@/components/BatteryCard";
 import DashboardStats from "@/components/DashboardStats";
-import { getBatteryStatus, getTripHistory } from "@/utils/api";
+import { apiEndpoints } from "@/utils/api";
 
 const Dashboard = () => {
   const router = useRouter();
@@ -25,16 +25,22 @@ const Dashboard = () => {
       try {
         setLoading(true);
         setError(null);
+        
         const [batteryData, tripData] = await Promise.all([
-          getBatteryStatus(),
-          getTripHistory()
+          apiEndpoints.battery.getStatus(),
+          apiEndpoints.trips.getHistory()
         ]);
 
         setBattery(batteryData);
         setTripHistory(tripData);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        setError("Failed to load dashboard data. Please try again later.");
+        setError(error.message || "Failed to load dashboard data. Please try again later.");
+        
+        // Handle authentication errors
+        if (error.status === 401) {
+          router.push('/login');
+        }
       } finally {
         setLoading(false);
       }

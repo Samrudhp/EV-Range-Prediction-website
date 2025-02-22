@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import axios from "axios";
+import { apiEndpoints } from "@/utils/api";
 import MapComponent from "@/components/MapComponent";
 
 export default function MapPage() {
@@ -15,42 +15,37 @@ export default function MapPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Check if user is logged in
   useEffect(() => {
     if (!user) {
       router.push("/login");
     }
   }, [user, router]);
 
-  // Function to fetch route details & battery estimate
   const handleGetRoute = async () => {
     if (!start || !end) {
       setError("Please select both start and end locations on the map.");
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/maps/route`,
-        { 
-          start, 
-          end,
-          timestamp: new Date().toISOString() 
-        },
-        { 
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      setLoading(true);
+      setError(null);
 
-      setRouteData(response.data.route);
-      setBatteryEstimate(response.data.batteryUsage);
+      const result = await apiEndpoints.maps.getRoute({ 
+        start, 
+        end,
+        timestamp: new Date().toISOString() 
+      });
+
+      setRouteData(result.route);
+      setBatteryEstimate(result.batteryUsage);
     } catch (error) {
       console.error("Error fetching route:", error);
-      setError(error.response?.data?.message || "Failed to fetch optimized route.");
+      setError(error.message || "Failed to fetch optimized route.");
+      
+      if (error.status === 401) {
+        router.push('/login');
+      }
     } finally {
       setLoading(false);
     }

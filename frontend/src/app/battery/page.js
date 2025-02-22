@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { getBatteryStatus } from "@/utils/api";
+import { apiEndpoints } from "@/utils/api";
 
 export default function BatteryStatus() {
   const router = useRouter();
@@ -23,11 +23,16 @@ export default function BatteryStatus() {
     try {
       setLoading(true);
       setError(null);
-      const data = await getBatteryStatus();
+      const data = await apiEndpoints.battery.getStatus();
       setBattery(data);
     } catch (error) {
       console.error("Error fetching battery status:", error);
-      setError("Failed to fetch battery status. Please try again later.");
+      setError(error.message || "Failed to fetch battery status. Please try again later.");
+      
+      // Handle authentication errors
+      if (error.status === 401) {
+        router.push('/login');
+      }
     } finally {
       setLoading(false);
     }

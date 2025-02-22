@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import Map from '@/components/Map';
 
 // Dynamically import Map component with loading state
-const Map = dynamic(() => import("./Map"), { 
+const DynamicMap = dynamic(() => import('@/components/Map'), { 
     ssr: false,
     loading: () => (
         <div className="animate-pulse bg-gray-200 rounded-lg h-[500px] w-full" />
@@ -32,7 +31,7 @@ export default function MapComponent({
         <div className="relative rounded-lg overflow-hidden shadow-lg bg-white">
             {/* Map Container */}
             <div className="h-[500px] w-full">
-                <Map
+                <DynamicMap
                     startLocation={startLocation}
                     endLocation={endLocation}
                     onLocationClick={handleLocationClick}

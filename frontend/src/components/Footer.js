@@ -1,6 +1,6 @@
 import React from "react";
 
-export default  Footer = () => {
+export default function  Footer(){
   return (
     <footer className="bg-gray-900 text-white py-4 text-center mt-10">
       <p className="text-sm">
