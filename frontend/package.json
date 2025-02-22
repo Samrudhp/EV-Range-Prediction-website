@@ -1,5 +1,5 @@
 {
-  "name": "my-project",
+  "name": "frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,21 +9,20 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.0.6",
+    "@tanstack/react-table": "^8.21.2",
     "axios": "^1.7.9",
-    "chart.js": "^4.4.7",
+    "leaflet": "^1.9.4",
     "next": "15.1.7",
     "react": "^19.0.0",
-    "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.0.0",
-    "recharts": "^2.15.1",
-    "zustand": "^5.0.3"
+    "react-leaflet": "^5.0.0",
+    "recharts": "^2.15.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
-    "postcss": "^8.5.2",
-    "tailwindcss": "^3.4.17"
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1"
   }
 }
