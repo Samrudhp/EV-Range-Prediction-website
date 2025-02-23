@@ -1,12 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import api from '@/utils/api';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loginUser } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -14,30 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let mounted = true;
-
-    // Clear error when component mounts or user changes
-    if (mounted) {
-      setError("");
-    }
-    
-    if (user) {
-      router.replace('/dashboard').catch(e => {
-        if (mounted) {
-          console.error('Navigation error:', e);
-          setError("Failed to navigate to dashboard");
-        }
-      });
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, [user, router]);
-
   const validateForm = () => {
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim() || !formData.password.trim()) {
       setError("Please enter all fields");
@@ -61,28 +37,36 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       setLoading(true);
       setError("");
       
-      const result = await loginUser(formData.email, formData.password);
+      const response = await api.post('/auth/login', formData);
       
-      if (!result?.success) {
-        throw new Error(result?.message || "Login failed");
+      if (response.data?.token) {
+        // Set token with secure settings
+        const cookieOptions = [
+          `token=${response.data.token}`,
+          'path=/',
+          'max-age=86400',
+          'samesite=lax',
+          process.env.NODE_ENV === 'production' ? 'secure' : ''
+        ].filter(Boolean).join('; ');
+        
+        document.cookie = cookieOptions;
+        
+        // Add small delay before redirect
+        await new Promise(resolve => setTimeout(resolve, 100));
+        router.push('/dashboard');
+      } else {
+        throw new Error("Invalid response from server");
       }
-      // Navigation will be handled by the useEffect when user state updates
+      
     } catch (error) {
-      console.error('Login error:', error);
-      setError(
-        error?.response?.data?.message || 
-        error?.message || 
-        "An error occurred during login"
-      );
+      console.error('[Login] Error:', error.message);
+      setError(error.response?.data?.message || "Invalid credentials");
     } finally {
       setLoading(false);
     }

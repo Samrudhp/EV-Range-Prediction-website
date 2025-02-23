@@ -3,19 +3,32 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import { useRouter } from "next/navigation";
 import api from '@/utils/api';
 
+// Enhanced cookie helper functions
+const cookieUtils = {
+  get: (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  },
+  remove: (name) => {
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+  }
+};
+
 const AuthContext = createContext({});
 
 export function AuthProvider({ children }) {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   // Setup axios interceptors
   useEffect(() => {
     // Request interceptor
     const requestInterceptor = api.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('token');
+        const token = cookieUtils.get('token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -29,8 +42,7 @@ export function AuthProvider({ children }) {
       (response) => response,
       async (error) => {
         if (error.response?.status === 401) {
-          // Clear auth state
-          localStorage.removeItem('token');
+          cookieUtils.remove('token');
           setUser(null);
           delete api.defaults.headers.common['Authorization'];
           router.push('/login');
@@ -40,66 +52,49 @@ export function AuthProvider({ children }) {
     );
 
     // Check for existing token on mount
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // Verify token and get user data
-      api.get('/auth/me')
-        .then(response => {
-          setUser(response.data);
-        })
-        .catch(() => {
-          localStorage.removeItem('token');
-          delete api.defaults.headers.common['Authorization'];
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
-    }
+    const checkAuth = async () => {
+      const token = cookieUtils.get('token');
+      if (!token) {
+        setLoading(false);
+        setInitialized(true);
+        return;
+      }
 
-    // Cleanup interceptors
+      try {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const response = await api.get('/auth/me');
+        setUser(response.data);
+      } catch (error) {
+        cookieUtils.remove('token');
+        delete api.defaults.headers.common['Authorization'];
+      } finally {
+        setLoading(false);
+        setInitialized(true);
+      }
+    };
+
+    checkAuth();
+
     return () => {
       api.interceptors.request.eject(requestInterceptor);
       api.interceptors.response.eject(responseInterceptor);
     };
   }, [router]);
 
-  const loginUser = useCallback(async (email, password) => {
-    try {
-      setLoading(true);
-      const response = await api.post('/auth/login', { email, password });
-      
-      if (response.data?.token) {
-        localStorage.setItem('token', response.data.token);
-        setUser(response.data.user);
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-        return { success: true };
-      }
-      
-      throw new Error('Invalid login response');
-    } catch (error) {
-      localStorage.removeItem('token');
-      setUser(null);
-      delete api.defaults.headers.common['Authorization'];
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const logoutUser = useCallback(() => {
-    localStorage.removeItem("token");
+    cookieUtils.remove('token');
     setUser(null);
     delete api.defaults.headers.common['Authorization'];
     router.push("/login");
   }, [router]);
 
+  if (!initialized) {
+    return null;
+  }
+
   return (
     <AuthContext.Provider value={{ 
-      user, 
-      loginUser,
+      user,
       logoutUser,
       loading 
     }}>
