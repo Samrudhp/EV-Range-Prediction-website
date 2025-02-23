@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { login } from "../api";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify"; // Import toast
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -13,9 +12,10 @@ const Login = () => {
     try {
       const { data } = await login(form);
       localStorage.setItem("token", data.token);
+      toast.success("Login successful!"); // Show success toast
       navigate("/dashboard");
     } catch (error) {
-        toast.error("Login failed: " + error.response?.data?.message);
+      toast.error("Login failed: " + error.response?.data?.message); // Show error toast
     }
   };
 
