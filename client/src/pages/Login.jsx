@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { login } from "../api";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -13,7 +15,7 @@ const Login = () => {
       localStorage.setItem("token", data.token);
       navigate("/dashboard");
     } catch (error) {
-      alert("Login failed: " + error.response?.data?.message);
+        toast.error("Login failed: " + error.response?.data?.message);
     }
   };
 
