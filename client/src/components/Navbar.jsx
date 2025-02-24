@@ -17,11 +17,11 @@ const Navbar = () => {
   };
 
   return (
-    <aside className="w-72 h-screen bg-gradient-to-b from-blue-800 via-blue-600 to-green-500 text-white fixed flex flex-col p-6 shadow-2xl">
-      <h2 className="text-3xl font-extrabold tracking-tight mb-10 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-200">
-        EV Prediction
+    <aside className="w-80 h-screen bg-black text-gray-100 fixed flex flex-col p-8 shadow-2xl border-r border-purple-900/30">
+      <h2 className="text-4xl font-bold mb-12 tracking-wide bg-gradient-to-r from-purple-500 to-purple-300 bg-clip-text text-transparent">
+        EV PREDICTION
       </h2>
-      <nav className="space-y-4 flex-1">
+      <nav className="space-y-6 flex-1">
         {[
           { id: "map", label: "Route Prediction" },
           { id: "battery", label: "Battery Health" },
@@ -31,7 +31,7 @@ const Navbar = () => {
           <button
             key={item.id}
             onClick={() => scrollToSection(item.id)}
-            className="w-full text-left py-3 px-5 rounded-xl bg-opacity-0 hover:bg-white/10 transition-all duration-300 text-lg font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-1"
+            className="w-full text-left py-4 px-6 text-xl font-semibold uppercase tracking-wide hover:bg-purple-900/50 transition-all duration-300 rounded-lg shadow-md hover:shadow-purple-700/30"
           >
             {item.label}
           </button>
@@ -39,7 +39,7 @@ const Navbar = () => {
       </nav>
       <button
         onClick={handleLogout}
-        className="bg-red-600 hover:bg-red-700 py-3 px-5 rounded-xl transition-all duration-300 text-lg font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-1"
+        className="bg-gradient-to-r from-purple-700 to-purple-900 text-white py-4 px-6 text-xl font-semibold uppercase tracking-wide rounded-lg hover:from-purple-800 hover:to-purple-950 transition-all duration-300 shadow-md"
       >
         Logout
       </button>
