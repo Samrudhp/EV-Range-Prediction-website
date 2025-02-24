@@ -18,9 +18,9 @@ const Profile = () => {
 
   return (
     <div id="profile" className="p-4 bg-white rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4">Profile</h3>
+      <h3 className="text-xl font-bold mb-4 text-black">Profile</h3>
       {profile ? (
-        <div>
+        <div className="text-black">
           <p>Name: {profile.name}</p>
           <p>Email: {profile.email}</p>
         </div>

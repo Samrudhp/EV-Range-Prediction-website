@@ -29,15 +29,15 @@ const BatteryStatus = () => {
 
   return (
     <div id="battery" className="p-4 bg-white rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4">Battery Health</h3>
+      <h3 className="text-xl font-bold mb-4 text-black">Battery Health</h3>
       {battery ? (
-        <div className="mb-4">
+        <div className="mb-4 text-black">
           <p>Level: {battery.batteryLevel}%</p>
           <p>Last Charged: {new Date(battery.lastCharged).toLocaleString()}</p>
           <p>Health: {battery.healthStatus}</p>
         </div>
       ) : (
-        <p>Loading...</p>
+        <p className="text-black">Loading...</p>
       )}
       <form onSubmit={handleSubmit} className="space-y-2">
         <input

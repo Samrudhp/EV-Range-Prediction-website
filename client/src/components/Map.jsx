@@ -85,7 +85,7 @@ const Map = () => {
         {route && <Polyline positions={route} />}
         {route && <Marker position={route[0]} />}
         {route && <Marker position={route[route.length - 1]} />}
-      </MapContainer>
+      </MapContainer >
       {predictedRange && (
         <p className="mt-2 text-green-600">Predicted Range: {predictedRange} km</p>
       )}

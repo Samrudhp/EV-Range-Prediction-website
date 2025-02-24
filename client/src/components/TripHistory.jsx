@@ -31,7 +31,7 @@ const TripHistory = () => {
 
   return (
     <div id="trips" className="p-4 bg-white rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4">Trip History</h3>
+      <h3 className="text-xl font-bold mb-4 text-black">Trip History</h3>
       <form onSubmit={handleSubmit} className="mb-4 space-y-2">
         <input
           type="text"
@@ -72,7 +72,7 @@ const TripHistory = () => {
           Add Trip
         </button>
       </form>
-      <div>
+      <div className="text-black">
         {trips.length ? (
           trips.map((trip) => (
             <div key={trip._id} className="border-b py-2">
