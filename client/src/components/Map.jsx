@@ -17,19 +17,16 @@ const Map = () => {
   const handleRoute = async (e) => {
     e.preventDefault();
     try {
-      // Geocode start location
       const startGeoResponse = await axios.get(`${ORS_BASE_URL}/geocode/search`, {
         params: { api_key: ORS_API_KEY, text: start, size: 1 },
       });
       const startCoords = startGeoResponse.data.features[0].geometry.coordinates;
 
-      // Geocode end location
       const endGeoResponse = await axios.get(`${ORS_BASE_URL}/geocode/search`, {
         params: { api_key: ORS_API_KEY, text: end, size: 1 },
       });
       const endCoords = endGeoResponse.data.features[0].geometry.coordinates;
 
-      // Get route from ORS
       const routeResponse = await axios.post(
         `${ORS_BASE_URL}/v2/directions/driving-car/geojson`,
         { coordinates: [startCoords, endCoords], instructions: false },
@@ -37,17 +34,16 @@ const Map = () => {
       );
 
       const routeCoords = routeResponse.data.features[0].geometry.coordinates.map(([lon, lat]) => [lat, lon]);
-      // Corrected distance extraction from summary
-      const tripDistance = routeResponse.data.features[0].properties.summary.distance / 1000; // meters to km
+      const summary = routeResponse.data.features[0].properties.summary;
+      const tripDistance = summary.distance / 1000;
 
-      // Send to backend
       const { data } = await getRoute({
         source: start,
         destination: end,
         trip_distance: tripDistance,
-        elevation_change: 50, // Placeholder
-        traffic_delay: 10, // Placeholder
-        battery_consumption: 20, // Placeholder
+        elevation_change: 50,
+        traffic_delay: 10,
+        battery_consumption: 20,
       });
 
       setRoute(routeCoords);
@@ -60,34 +56,42 @@ const Map = () => {
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow-lg">
-      <form onSubmit={handleRoute} className="mb-4 flex space-x-2">
+    <div className="bg-white rounded-2xl shadow-xl p-6">
+      <h3 className="text-2xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-500">
+        Route Prediction
+      </h3>
+      <form onSubmit={handleRoute} className="flex flex-col sm:flex-row gap-4 mb-6">
         <input
           type="text"
           placeholder="Start Location"
           value={start}
           onChange={(e) => setStart(e.target.value)}
-          className="p-2 border rounded flex-1"
+          className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
         />
         <input
           type="text"
           placeholder="End Location"
           value={end}
           onChange={(e) => setEnd(e.target.value)}
-          className="p-2 border rounded flex-1"
+          className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
         />
-        <button type="submit" className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+        <button
+          type="submit"
+          className="bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 px-6 rounded-lg hover:from-blue-700 hover:to-green-600 transition-all duration-300 shadow-md"
+        >
           Get Route
         </button>
       </form>
-      <MapContainer center={[51.505, -0.09]} zoom={13} className="h-96 w-full">
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {route && <Polyline positions={route} />}
-        {route && <Marker position={route[0]} />}
-        {route && <Marker position={route[route.length - 1]} />}
-      </MapContainer >
+      <div className="rounded-xl overflow-hidden shadow-lg">
+        <MapContainer center={[51.505, -0.09]} zoom={13} className="h-[400px] w-full">
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {route && <Polyline positions={route} color="blue" />}
+          {route && <Marker position={route[0]} />}
+          {route && <Marker position={route[route.length - 1]} />}
+        </MapContainer>
+      </div>
       {predictedRange && (
-        <p className="mt-2 text-green-600">Predicted Range: {predictedRange} km</p>
+        <p className="mt-4 text-lg font-semibold text-green-600">Predicted Range: {predictedRange} km</p>
       )}
     </div>
   );
