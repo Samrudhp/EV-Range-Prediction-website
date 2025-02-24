@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
-import Ors from "openrouteservice-js";
+import axios from "axios";
 import { getRoute } from "../api";
+import { toast } from "react-toastify";
 import "leaflet/dist/leaflet.css";
 
 const Map = () => {
@@ -10,32 +11,40 @@ const Map = () => {
   const [route, setRoute] = useState(null);
   const [predictedRange, setPredictedRange] = useState(null);
 
-  const ors = new Ors.Directions({
-    api_key: import.meta.env.VITE_OPENROUTE_API_KEY,
-  });
+  const ORS_API_KEY = import.meta.env.VITE_OPENROUTE_API_KEY;
+  const ORS_BASE_URL = "https://api.openrouteservice.org";
 
   const handleRoute = async (e) => {
     e.preventDefault();
     try {
-      // Geocode start and end (simplified; use ORS Geocode API if needed)
-      const geocodeStart = await ors.geocode({ text: start });
-      const geocodeEnd = await ors.geocode({ text: end });
-      const startCoords = geocodeStart.features[0].geometry.coordinates; // [lon, lat]
-      const endCoords = geocodeEnd.features[0].geometry.coordinates;
-
-      // Get route
-      const routeData = await ors.calculate({
-        coordinates: [startCoords, endCoords],
-        profile: "driving-car",
-        format: "geojson",
+      // Geocode start location
+      const startGeoResponse = await axios.get(`${ORS_BASE_URL}/geocode/search`, {
+        params: { api_key: ORS_API_KEY, text: start, size: 1 },
       });
-      const routeCoords = routeData.features[0].geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+      const startCoords = startGeoResponse.data.features[0].geometry.coordinates;
 
-      // Backend prediction
+      // Geocode end location
+      const endGeoResponse = await axios.get(`${ORS_BASE_URL}/geocode/search`, {
+        params: { api_key: ORS_API_KEY, text: end, size: 1 },
+      });
+      const endCoords = endGeoResponse.data.features[0].geometry.coordinates;
+
+      // Get route from ORS
+      const routeResponse = await axios.post(
+        `${ORS_BASE_URL}/v2/directions/driving-car/geojson`,
+        { coordinates: [startCoords, endCoords], instructions: false },
+        { headers: { Authorization: ORS_API_KEY, "Content-Type": "application/json" } }
+      );
+
+      const routeCoords = routeResponse.data.features[0].geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+      // Corrected distance extraction from summary
+      const tripDistance = routeResponse.data.features[0].properties.summary.distance / 1000; // meters to km
+
+      // Send to backend
       const { data } = await getRoute({
         source: start,
         destination: end,
-        trip_distance: routeData.features[0].properties.segments[0].distance / 1000, // km
+        trip_distance: tripDistance,
         elevation_change: 50, // Placeholder
         traffic_delay: 10, // Placeholder
         battery_consumption: 20, // Placeholder
@@ -43,8 +52,10 @@ const Map = () => {
 
       setRoute(routeCoords);
       setPredictedRange(data.predicted_range);
+      toast.success("Route calculated successfully!");
     } catch (error) {
-      alert("Route calculation failed: " + error.message);
+      console.error("Route calculation failed:", error);
+      toast.error("Route calculation failed: " + (error.response?.data?.message || error.message));
     }
   };
 

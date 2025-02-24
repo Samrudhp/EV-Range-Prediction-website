@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getTrips, addTrip } from "../api";
+import { toast } from "react-toastify";
 
 const TripHistory = () => {
   const [trips, setTrips] = useState([]);
@@ -20,11 +21,12 @@ const TripHistory = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await addTrip(form);
-      setTrips([data, ...trips]);
-    } catch (error) {
-      alert("Trip add failed");
-    }
+        const { data } = await addTrip(form);
+        setTrips([data, ...trips]);
+        toast.success("Trip added successfully!");
+      } catch (error) {
+        toast.error("Trip add failed: " + error.response?.data?.message);
+      }
   };
 
   return (
