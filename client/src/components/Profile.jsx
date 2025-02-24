@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getProfile } from "../api";
+import { toast } from "react-toastify";
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -10,22 +11,28 @@ const Profile = () => {
         const { data } = await getProfile();
         setProfile(data);
       } catch (error) {
-        console.error("Profile fetch failed");
+        toast.error("Profile fetch failed: " + error.response?.data?.message);
       }
     };
     fetchProfile();
   }, []);
 
   return (
-    <div id="profile" className="p-4 bg-white rounded-lg shadow-lg">
-      <h3 className="text-xl font-bold mb-4 text-black">Profile</h3>
+    <div className="bg-white rounded-2xl shadow-xl p-6">
+      <h3 className="text-2xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-500">
+        Profile
+      </h3>
       {profile ? (
-        <div className="text-black">
-          <p>Name: {profile.name}</p>
-          <p>Email: {profile.email}</p>
+        <div className="space-y-4">
+          <p className="text-gray-700 text-lg">
+            Name: <span className="font-semibold">{profile.name}</span>
+          </p>
+          <p className="text-gray-700 text-lg">
+            Email: <span className="font-semibold">{profile.email}</span>
+          </p>
         </div>
       ) : (
-        <p>Loading...</p>
+        <p className="text-gray-500">Loading...</p>
       )}
     </div>
   );
