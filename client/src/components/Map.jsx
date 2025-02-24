@@ -48,7 +48,7 @@ const Map = () => {
 
       setRoute(routeCoords);
       setPredictedRange(data.predicted_range);
-      toast.success("Route calculated successfully!");
+      toast.success("Route Calculated!");
     } catch (error) {
       console.error("Route calculation failed:", error);
       toast.error("Route calculation failed: " + (error.response?.data?.message || error.message));
@@ -56,42 +56,42 @@ const Map = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
-      <h3 className="text-2xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-500">
+    <div className="bg-gray-800 rounded-xl shadow-2xl p-8 border border-purple-900/30">
+      <h3 className="text-3xl font-bold mb-6 tracking-wide bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
         Route Prediction
       </h3>
-      <form onSubmit={handleRoute} className="flex flex-col sm:flex-row gap-4 mb-6">
+      <form onSubmit={handleRoute} className="flex flex-col sm:flex-row gap-4 mb-8">
         <input
           type="text"
           placeholder="Start Location"
           value={start}
           onChange={(e) => setStart(e.target.value)}
-          className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+          className="flex-1 p-4 bg-gray-700 text-gray-200 border border-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 placeholder-gray-400"
         />
         <input
           type="text"
           placeholder="End Location"
           value={end}
           onChange={(e) => setEnd(e.target.value)}
-          className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+          className="flex-1 p-4 bg-gray-700 text-gray-200 border border-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 placeholder-gray-400"
         />
         <button
           type="submit"
-          className="bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 px-6 rounded-lg hover:from-blue-700 hover:to-green-600 transition-all duration-300 shadow-md"
+          className="bg-gradient-to-r from-purple-600 to-purple-800 text-white py-4 px-8 rounded-lg hover:from-purple-700 hover:to-purple-900 transition-all duration-300 shadow-lg uppercase font-semibold"
         >
-          Get Route
+          Calculate
         </button>
       </form>
-      <div className="rounded-xl overflow-hidden shadow-lg">
-        <MapContainer center={[51.505, -0.09]} zoom={13} className="h-[400px] w-full">
+      <div className="rounded-lg overflow-hidden shadow-inner border border-purple-900/50">
+        <MapContainer center={[51.505, -0.09]} zoom={13} className="h-[450px] w-full">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {route && <Polyline positions={route} color="blue" />}
+          {route && <Polyline positions={route} color="#9333ea" />}
           {route && <Marker position={route[0]} />}
           {route && <Marker position={route[route.length - 1]} />}
         </MapContainer>
       </div>
       {predictedRange && (
-        <p className="mt-4 text-lg font-semibold text-green-600">Predicted Range: {predictedRange} km</p>
+        <p className="mt-6 text-xl font-semibold text-purple-400">Predicted Range: {predictedRange} km</p>
       )}
     </div>
   );
