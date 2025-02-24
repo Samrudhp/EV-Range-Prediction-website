@@ -6,17 +6,27 @@ import Profile from "../components/Profile";
 
 const Dashboard = () => {
   return (
-    <div className="flex">
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
       <Navbar />
-      <div className="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
-        <h1 className="text-3xl font-bold mb-8 text-black">Dashboard</h1>
-        <div className="space-y-8">
-          <div id ='map'><Map /></div>
-          <BatteryStatus />
-          <TripHistory />
-          <Profile />
+      <main className="flex-1 ml-72 p-10">
+        <h1 className="text-5xl font-extrabold text-gray-900 mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-500">
+          Dashboard
+        </h1>
+        <div className="space-y-10">
+          <section id="map" className="transform transition-all duration-300 hover:scale-[1.02]">
+            <Map />
+          </section>
+          <section id="battery" className="transform transition-all duration-300 hover:scale-[1.02]">
+            <BatteryStatus />
+          </section>
+          <section id="trips" className="transform transition-all duration-300 hover:scale-[1.02]">
+            <TripHistory />
+          </section>
+          <section id="profile" className="transform transition-all duration-300 hover:scale-[1.02]">
+            <Profile />
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
