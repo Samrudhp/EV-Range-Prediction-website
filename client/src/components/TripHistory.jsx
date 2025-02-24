@@ -57,35 +57,35 @@ const TripHistory = () => {
       setTrips([data, ...trips]);
       setStart("");
       setEnd("");
-      toast.success("Trip added successfully!");
+      toast.success("Trip Added!");
     } catch (error) {
       toast.error("Trip add failed: " + error.response?.data?.message);
     }
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
-      <h3 className="text-2xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-500">
+    <div className="bg-gray-800 rounded-xl shadow-2xl p-8 border border-purple-900/30">
+      <h3 className="text-3xl font-bold mb-6 tracking-wide bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
         Trip History
       </h3>
-      <form onSubmit={handleAddTrip} className="mb-6 space-y-4">
+      <form onSubmit={handleAddTrip} className="mb-8 space-y-6">
         <input
           type="text"
           value={start}
           onChange={(e) => setStart(e.target.value)}
           placeholder="Start Location"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-4 bg-gray-700 text-gray-200 border border-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 placeholder-gray-400"
         />
         <input
           type="text"
           value={end}
           onChange={(e) => setEnd(e.target.value)}
           placeholder="End Location"
-          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-4 bg-gray-700 text-gray-200 border border-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 placeholder-gray-400"
         />
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 rounded-lg hover:from-blue-700 hover:to-green-600 transition-all duration-300 shadow-md"
+          className="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white py-4 rounded-lg hover:from-purple-700 hover:to-purple-900 transition-all duration-300 shadow-lg uppercase font-semibold"
         >
           Add Trip
         </button>
@@ -95,20 +95,20 @@ const TripHistory = () => {
           trips.map((trip) => (
             <div
               key={trip._id}
-              className="p-4 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition-all duration-200"
+              className="p-5 bg-gray-700 rounded-lg shadow-md hover:bg-gray-600 transition-all duration-200 border border-purple-900/50"
             >
-              <p className="text-gray-800 font-semibold">
+              <p className="text-gray-200 text-lg font-semibold">
                 {trip.startLocation} → {trip.endLocation}
               </p>
-              <p className="text-gray-600">
-                Distance: <span className="font-medium">{trip.distance} km</span>, Energy:{" "}
-                <span className="font-medium">{trip.energyUsed} kWh</span>, Duration:{" "}
-                <span className="font-medium">{trip.duration} min</span>
+              <p className="text-gray-400 text-md">
+                Distance: <span className="text-purple-400">{trip.distance} km</span> | Energy:{" "}
+                <span className="text-purple-400">{trip.energyUsed} kWh</span> | Duration:{" "}
+                <span className="text-purple-400">{trip.duration} min</span>
               </p>
             </div>
           ))
         ) : (
-          <p className="text-gray-500 text-center">No trips yet</p>
+          <p className="text-gray-400 text-center">No trips yet</p>
         )}
       </div>
     </div>
