@@ -18,21 +18,21 @@ const Profile = () => {
   }, []);
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
-      <h3 className="text-2xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-500">
+    <div className="bg-gray-800 rounded-xl shadow-2xl p-8 border border-purple-900/30">
+      <h3 className="text-3xl font-bold mb-6 tracking-wide bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
         Profile
       </h3>
       {profile ? (
         <div className="space-y-4">
-          <p className="text-gray-700 text-lg">
-            Name: <span className="font-semibold">{profile.name}</span>
+          <p className="text-gray-200 text-xl">
+            Name: <span className="font-semibold text-purple-400">{profile.name}</span>
           </p>
-          <p className="text-gray-700 text-lg">
-            Email: <span className="font-semibold">{profile.email}</span>
+          <p className="text-gray-200 text-xl">
+            Email: <span className="font-semibold text-purple-400">{profile.email}</span>
           </p>
         </div>
       ) : (
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-gray-400">Loading...</p>
       )}
     </div>
   );
