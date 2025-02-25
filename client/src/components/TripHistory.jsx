@@ -26,16 +26,19 @@ const TripHistory = () => {
   const handleAddTrip = async (e) => {
     e.preventDefault();
     try {
+      // Geocode start location
       const startGeoResponse = await axios.get(`${ORS_BASE_URL}/geocode/search`, {
         params: { api_key: ORS_API_KEY, text: start, size: 1 },
       });
       const startCoords = startGeoResponse.data.features[0].geometry.coordinates;
 
+      // Geocode end location
       const endGeoResponse = await axios.get(`${ORS_BASE_URL}/geocode/search`, {
         params: { api_key: ORS_API_KEY, text: end, size: 1 },
       });
       const endCoords = endGeoResponse.data.features[0].geometry.coordinates;
 
+      // Get route from ORS
       const routeResponse = await axios.post(
         `${ORS_BASE_URL}/v2/directions/driving-car/geojson`,
         { coordinates: [startCoords, endCoords], instructions: false },
@@ -43,23 +46,25 @@ const TripHistory = () => {
       );
 
       const summary = routeResponse.data.features[0].properties.summary;
-      const distance = summary.distance / 1000;
-      const duration = summary.duration / 60;
+      const distance = summary.distance / 1000; // meters to km
+      const duration = summary.duration / 60; // seconds to minutes
 
+      // Send to backend
       const { data } = await addTrip({
-        startLocation: start,
-        endLocation: end,
+        startLocation: start, // User-entered text
+        endLocation: end, // User-entered text
         distance,
         duration,
-        energyUsed: 20,
+        energyUsed: 20, // Placeholder (needs EV-specific logic)
       });
 
       setTrips([data, ...trips]);
       setStart("");
       setEnd("");
-      toast.success("Trip Added!");
+      toast.success("Trip added successfully!");
     } catch (error) {
-      toast.error("Trip add failed: " + error.response?.data?.message);
+      console.error("Trip add failed:", error);
+      toast.error("Trip add failed: " + (error.response?.data?.message || error.message));
     }
   };
 

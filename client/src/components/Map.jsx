@@ -21,36 +21,41 @@ const Map = () => {
         params: { api_key: ORS_API_KEY, text: start, size: 1 },
       });
       const startCoords = startGeoResponse.data.features[0].geometry.coordinates;
-
+  
       const endGeoResponse = await axios.get(`${ORS_BASE_URL}/geocode/search`, {
         params: { api_key: ORS_API_KEY, text: end, size: 1 },
       });
       const endCoords = endGeoResponse.data.features[0].geometry.coordinates;
-
+  
       const routeResponse = await axios.post(
         `${ORS_BASE_URL}/v2/directions/driving-car/geojson`,
         { coordinates: [startCoords, endCoords], instructions: false },
         { headers: { Authorization: ORS_API_KEY, "Content-Type": "application/json" } }
       );
-
+  
       const routeCoords = routeResponse.data.features[0].geometry.coordinates.map(([lon, lat]) => [lat, lon]);
-      const summary = routeResponse.data.features[0].properties.summary;
-      const tripDistance = summary.distance / 1000;
-
-      const { data } = await getRoute({
-        source: start,
-        destination: end,
-        trip_distance: tripDistance,
-        elevation_change: 50,
-        traffic_delay: 10,
-        battery_consumption: 20,
-      });
-
+      const summary = routeResponse.data.features[0].properties.summary || {};
+      const tripDistance = summary.distance ? summary.distance / 1000 : 0; // Default to 0 if missing
+  
+      // Ensure all fields are explicitly defined
+      const payload = {
+        source: start || "", // Fallback to empty string if undefined
+        destination: end || "", // Fallback to empty string if undefined
+        trip_distance: tripDistance, // Now guaranteed to be a number
+        elevation_change: 50, // Placeholder, ensure it’s a number
+        traffic_delay: 10, // Placeholder, ensure it’s a number
+        battery_consumption: 20, // Placeholder, ensure it’s a number
+      };
+  
+      console.log("Payload to backend:", payload); // Debug the payload
+  
+      const { data } = await getRoute(payload);
+  
       setRoute(routeCoords);
       setPredictedRange(data.predicted_range);
-      toast.success("Route Calculated!");
+      toast.success("Route and range calculated successfully!");
     } catch (error) {
-      console.error("Route calculation failed:", error);
+      console.error("Route calculation failed:", error.response?.data || error);
       toast.error("Route calculation failed: " + (error.response?.data?.message || error.message));
     }
   };
