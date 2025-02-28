@@ -24,10 +24,10 @@ const Profile = () => {
       </h3>
       {profile ? (
         <div className="space-y-4">
-          <p className="text-gray-200 text-xl">
+          <p className="text-gray-200 text-2xl">
             Name: <span className="font-semibold text-purple-400">{profile.name}</span>
           </p>
-          <p className="text-gray-200 text-xl">
+          <p className="text-gray-200 text-2xl">
             Email: <span className="font-semibold text-purple-400">{profile.email}</span>
           </p>
         </div>
