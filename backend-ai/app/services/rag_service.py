@@ -51,8 +51,8 @@ class RAGService:
         
         self._initialized = True
     
-    def query_global(self, query: str, n_results: int = 5) -> Dict[str, Any]:
-        """Query global trip knowledge"""
+    def query_global(self, query: str, n_results: int = 3) -> Dict[str, Any]:
+        """Query global trip knowledge - OPTIMIZED: Reduced default from 5 to 3"""
         query_embedding = self.embedder.encode(query)
         
         results = self.global_rag.query(
@@ -66,8 +66,8 @@ class RAGService:
             "distances": results["distances"][0]
         }
     
-    def query_personal(self, user_id: str, query: str, n_results: int = 3) -> Dict[str, Any]:
-        """Query personal driving patterns for specific user"""
+    def query_personal(self, user_id: str, query: str, n_results: int = 2) -> Dict[str, Any]:
+        """Query personal driving patterns for specific user - OPTIMIZED: Reduced default from 3 to 2"""
         query_embedding = self.embedder.encode(query)
         
         results = self.personal_rag.query(
@@ -83,9 +83,9 @@ class RAGService:
         }
     
     def query_both(self, user_id: str, query: str) -> Dict[str, Any]:
-        """Query both RAG systems and combine results"""
-        global_results = self.query_global(query, n_results=5)
-        personal_results = self.query_personal(user_id, query, n_results=3)
+        """Query both RAG systems and combine results - OPTIMIZED: Reduced results"""
+        global_results = self.query_global(query, n_results=3)  # Reduced from 5
+        personal_results = self.query_personal(user_id, query, n_results=2)  # Reduced from 3
         
         return {
             "global": global_results,

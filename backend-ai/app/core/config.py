@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     
     # LLM (Using cached Orca Mini 3B model)
     LLM_MODEL: str = "orca-mini-3b-gguf2-q4_0.gguf"
-    LLM_MAX_TOKENS: int = 600
-    LLM_TEMPERATURE: float = 0.3
+    LLM_MAX_TOKENS: int = 180  # Reduced for concise, focused responses
+    LLM_TEMPERATURE: float = 0.1  # Very low = consistent, factual output
     
     # Data
     DATASET_PATH: str = "./data"

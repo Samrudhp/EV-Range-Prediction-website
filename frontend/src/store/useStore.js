@@ -13,6 +13,25 @@ const useStore = create((set) => ({
   
   // User state
   currentUser: { id: 'user_001', name: 'Demo User' },
+  
+  // Route and Map state
+  routeData: null,
+  sourceLocation: null,
+  destinationLocation: null,
+  chargingStations: [],
+  
+  setRouteData: (data) => set({ 
+    routeData: data.route,
+    sourceLocation: data.source,
+    destinationLocation: data.destination,
+    chargingStations: data.chargingStations || []
+  }),
+  clearRouteData: () => set({ 
+    routeData: null, 
+    sourceLocation: null, 
+    destinationLocation: null,
+    chargingStations: []
+  }),
 }));
 
 export default useStore;

@@ -1,19 +1,24 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPaperPlane, FaLightbulb, FaRobot, FaSpinner, FaBolt } from 'react-icons/fa';
+import { FaPaperPlane, FaLightbulb, FaRobot, FaSpinner, FaBolt, FaMapMarkedAlt } from 'react-icons/fa';
 import useStore from '../store/useStore';
 import { queryAI } from '../utils/api';
+import { processAIQueryForRoute } from '../utils/locationUtils';
 
 const AIAssistant = () => {
   const [query, setQuery] = useState('');
-  const { isLoading, aiResponse, setLoading, setAiResponse, setError, clearResponse } = useStore();
+  const navigate = useNavigate();
+  const { isLoading, aiResponse, setLoading, setAiResponse, setError, clearResponse, setRouteData } = useStore();
+  const [routeInfo, setRouteInfo] = useState(null);
 
   const suggestedQueries = [
-    "Can I reach Goa from Mumbai with 75% battery?",
-    "Plan route to Bangalore with charging stops",
-    "How is my driving efficiency compared to others?",
-    "What's the best route from Delhi to Jaipur?",
-    "Find charging stations near Pune",
+    "Can I reach Pune from Mumbai with 75% battery?",
+    "Plan route from Delhi to Jaipur with charging stops",
+    "Show me charging stations from Bangalore to Chennai",
+    "Route from Mumbai to Goa with my EV",
+    "How to reach Hyderabad from Bangalore?",
+    "Find best route from Chennai to Coimbatore",
   ];
 
   const handleSubmit = async (e) => {
@@ -22,16 +27,37 @@ const AIAssistant = () => {
 
     setLoading(true);
     clearResponse();
+    setRouteInfo(null);
 
     try {
+      // Check if query is about routes
+      const routeData = processAIQueryForRoute(query);
+      
+      // Get AI response
       const response = await queryAI(query);
       setAiResponse(response);
+      
+      // If route detected, store it
+      if (routeData) {
+        setRouteInfo(routeData);
+        setRouteData({
+          route: routeData.route,
+          source: routeData.source,
+          destination: routeData.destination,
+          chargingStations: routeData.chargingStations
+        });
+      }
+      
       setQuery(''); // Clear input after successful query
     } catch (error) {
       setError(error.response?.data?.detail || 'Failed to connect to AI backend. Make sure the server is running on http://localhost:8000');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewOnMap = () => {
+    navigate('/map');
   };
 
   const handleSuggestionClick = (suggestion) => {
@@ -216,6 +242,52 @@ const AIAssistant = () => {
                   </div>
                 </div>
 
+                {/* Route Info Card */}
+                {routeInfo && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200/50 rounded-2xl"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                        <FaMapMarkedAlt className="text-white text-lg" />
+                      </div>
+                      <div>
+                        <h4 className="text-gray-800 font-bold">Route Detected</h4>
+                        <p className="text-sm text-gray-600">
+                          {routeInfo.sourceName} → {routeInfo.destinationName}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="text-center p-3 bg-white/60 rounded-xl">
+                        <div className="text-2xl font-bold text-blue-600">{routeInfo.distance} km</div>
+                        <div className="text-xs text-gray-600 mt-1">Distance</div>
+                      </div>
+                      <div className="text-center p-3 bg-white/60 rounded-xl">
+                        <div className="text-2xl font-bold text-indigo-600">{routeInfo.chargingStations.length}</div>
+                        <div className="text-xs text-gray-600 mt-1">Charging Stops</div>
+                      </div>
+                      <div className="text-center p-3 bg-white/60 rounded-xl">
+                        <div className="text-2xl font-bold text-purple-600">~{Math.ceil(routeInfo.distance / 60)}h</div>
+                        <div className="text-xs text-gray-600 mt-1">Est. Time</div>
+                      </div>
+                    </div>
+                    
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleViewOnMap}
+                      className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-blue-500/50 transition-all duration-300"
+                    >
+                      <FaMapMarkedAlt className="text-lg" />
+                      View Route on Map
+                    </motion.button>
+                  </motion.div>
+                )}
+
                 {/* Metadata */}
                 {aiResponse.query_type && (
                   <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center gap-4 text-xs text-gray-400">
@@ -238,7 +310,7 @@ const AIAssistant = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={clearResponse}
-                    className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white text-sm font-medium transition-all duration-300"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-100 to-indigo-100 hover:from-blue-200 hover:to-indigo-200 border-2 border-blue-200/50 rounded-xl text-gray-700 text-sm font-medium transition-all duration-300"
                   >
                     Ask Another Question
                   </motion.button>

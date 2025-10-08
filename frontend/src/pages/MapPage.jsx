@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import InteractiveMap from '../components/InteractiveMap';
-import { FaRoad, FaBolt, FaChargingStation } from 'react-icons/fa';
+import useStore from '../store/useStore';
+import { FaRoad, FaBolt, FaChargingStation, FaMapMarkerAlt } from 'react-icons/fa';
 
-// Sample route data - Mumbai to Pune (Real coordinates)
+// Sample route data - Mumbai to Pune (Real coordinates) - Used as fallback
 const sampleRoutes = {
   routes: [
     {
@@ -21,7 +22,7 @@ const sampleRoutes = {
   ]
 };
 
-// Sample charging stations with real coordinates
+// Sample charging stations with real coordinates - Used as fallback
 const sampleStations = [
   { 
     position: [18.9894, 73.2933], 
@@ -49,13 +50,20 @@ const sampleStations = [
   },
 ];
 
-const currentLocation = [19.0760, 72.8777]; // Mumbai
-const destination = [18.5204, 73.8567]; // Pune
+const defaultCurrentLocation = [19.0760, 72.8777]; // Mumbai
+const defaultDestination = [18.5204, 73.8567]; // Pune
 
 export default function MapPage() {
+  const { routeData, sourceLocation, destinationLocation, chargingStations } = useStore();
   const [showRoute, setShowRoute] = useState(true);
   const [showStations, setShowStations] = useState(true);
   const [selectedStation, setSelectedStation] = useState(null);
+
+  // Use data from store if available, otherwise use sample data
+  const routes = routeData || sampleRoutes;
+  const currentLocation = sourceLocation || defaultCurrentLocation;
+  const destination = destinationLocation || defaultDestination;
+  const stations = chargingStations.length > 0 ? chargingStations : sampleStations;
 
   const handleStationClick = (station) => {
     setSelectedStation(station);
@@ -79,8 +87,23 @@ export default function MapPage() {
             Interactive Route Map
           </h1>
           <p className="text-gray-600 text-lg">
-            Real map with route planning and charging stations
+            {routeData 
+              ? "🤖 AI-generated route with optimized charging stops" 
+              : "Real map with route planning and charging stations (Sample Route: Mumbai to Pune)"}
           </p>
+          {routeData && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-300/50 rounded-xl px-4 py-2"
+            >
+              <FaMapMarkerAlt className="text-blue-600" />
+              <span className="text-gray-700 font-medium">
+                AI Assistant detected route and updated the map
+              </span>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Controls */}
@@ -136,8 +159,8 @@ export default function MapPage() {
           className="backdrop-blur-xl bg-white/60 border-2 border-blue-200/50 rounded-3xl p-2 shadow-2xl overflow-hidden"
         >
           <InteractiveMap
-            routeData={showRoute ? sampleRoutes : null}
-            chargingStations={showStations ? sampleStations : []}
+            routeData={showRoute ? routes : null}
+            chargingStations={showStations ? stations : []}
             currentLocation={currentLocation}
             destination={destination}
             height="700px"
