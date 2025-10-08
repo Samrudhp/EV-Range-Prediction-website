@@ -89,12 +89,28 @@ class LLMService:
         # Build CONCISE context
         context = self._build_context(query, user_id, query_type, rag_results)
         
+        # 🚨 DEBUG: Print FULL PROMPT sent to LLM
+        print(f"\n{'🔥'*30}")
+        print(f"📝 FULL PROMPT SENT TO LLM:")
+        print(f"{'='*60}")
+        print(context)
+        print(f"{'='*60}")
+        print(f"{'🔥'*30}\n")
+        
         # Generate response with REDUCED tokens for speed
         response = self.model.generate(
             context,
             max_tokens=settings.LLM_MAX_TOKENS,  # Now 180
             temp=settings.LLM_TEMPERATURE  # Now 0.1
         )
+        
+        # 🚨 DEBUG: Print LLM RESPONSE
+        print(f"\n{'🤖'*30}")
+        print(f"🤖 LLM RESPONSE:")
+        print(f"{'='*60}")
+        print(response)
+        print(f"{'='*60}")
+        print(f"{'🤖'*30}\n")
         
         return {
             "response": response.strip(),
@@ -222,118 +238,97 @@ COACHING ANALYSIS:"""
         global_metadata = rag_results['global']['metadatas'][0] if rag_results['global']['metadatas'] else {}
         
         if query_type == "range_prediction":
-            return f"""You are an EV range expert. Answer ONLY using the data provided below.
-
-COMMUNITY DATA (similar trips):
-{global_top[:400]}
-
-YOUR DRIVING HISTORY:
-{personal_top[:200]}
-
-USER QUESTION: {query}
-
-STRICT RULES:
-1. ONLY use information from the data above
-2. If data is insufficient, say "I don't have enough trip data for this route"
-3. Give YES or NO answer first with confidence %
-4. State estimated distance and energy if available in data
-5. Mention charging needs based on data
-6. Maximum 100 words
-7. DO NOT make up information
-
-ANSWER:"""
-        
-        elif query_type == "route_planning":
-            return f"""You are an EV route planner. Answer ONLY using the data provided below.
-
-COMMUNITY ROUTE DATA:
-{global_top[:400]}
-
-YOUR PREFERENCES:
-{personal_top[:200]}
-
-USER QUESTION: {query}
-
-STRICT RULES:
-1. ONLY use trip data provided above
-2. If no data for this route, say "I don't have trip data for this specific route"
-3. Estimate distance from data (don't invent)
-4. Suggest 1-2 charging stops per 200km maximum
-5. Base recommendations on actual trip data
-6. Maximum 120 words
-7. DO NOT hallucinate stations or routes
-
-ANSWER:"""
-        
-        elif query_type == "charging_info":
-            # Extract charging station info from metadata
-            charging_info = ""
-            if global_metadata:
-                charging_info = f"""
-Route: {global_metadata.get('start_location', '?')} to {global_metadata.get('end_location', '?')}
-Distance: {global_metadata.get('distance_km', '?')} km
-Charging stops needed: {global_metadata.get('num_charging_stops', 0)}
-Energy used: {global_metadata.get('energy_used_kwh', '?')} kWh
-"""
+            # Extract ONLY relevant efficiency data from personal history (remove route names)
+            personal_efficiency = "21.11 kWh/100km"  # Default
+            if "Average efficiency:" in personal_top:
+                try:
+                    personal_efficiency = personal_top.split("Average efficiency:")[1].split("\n")[0].strip()
+                except:
+                    pass
             
-            return f"""You are an EV charging station expert. Answer ONLY using the data below.
+            return f"""Answer this EV question using ONLY the trip data below. DO NOT use your training knowledge.
 
 TRIP DATA FOR THIS ROUTE:
 {global_top[:400]}
-{charging_info}
 
-YOUR CHARGING HISTORY:
-{personal_top[:150]}
+Your typical efficiency: {personal_efficiency}
 
-USER QUESTION: {query}
+QUESTION: {query}
 
-STRICT RULES:
-1. ONLY mention charging stops from the trip data above
-2. If no specific stations listed, say "Based on {global_metadata.get('num_charging_stops', 0)} charging stops needed for this route"
-3. DO NOT invent station names, networks, or locations
-4. Use data like "trips show X charging stops needed"
-5. Suggest checking real apps: ChargePoint, PlugShare, ABRP
-6. Maximum 100 words
-7. BE HONEST if data is limited
+ANSWER FORMAT:
+- YES/NO (confidence %)
+- Distance: [from data above]
+- Energy needed: [from data above]
+- Charging stops: [from data above]
+- Max 80 words
 
+DO NOT mention routes not in the data above.
+ANSWER:"""
+        
+        elif query_type == "route_planning":
+            return f"""Answer this route question using ONLY the trip data below.
+
+TRIP DATA:
+{global_top[:500]}
+
+QUESTION: {query}
+
+ANSWER FORMAT:
+- Route cities: [ONLY from data above]
+- Distance: [from data above]
+- Charging stops: [from data above]
+- Duration: [from data above]
+- Max 80 words
+
+DO NOT invent cities, routes, or charging stations. ONLY use data above.
+ANSWER:"""
+        
+        elif query_type == "charging_info":
+            return f"""Answer this charging question using ONLY the trip data below.
+
+TRIP DATA:
+{global_top[:500]}
+
+QUESTION: {query}
+
+ANSWER FORMAT:
+- Charging stops: [number from data above]
+- Station details: [ONLY if mentioned in data above]
+- Max 60 words
+
+If specific stations not in data, say "Data shows X stops needed, but station names not available."
 ANSWER:"""
         
         elif query_type == "performance_analysis":
-            return f"""You are an EV driving coach. Answer ONLY using the data below.
+            return f"""Rate this EV driving performance using ONLY the data below.
 
-YOUR METRICS:
-{personal_top[:300]}
+YOUR STATS:
+{personal_top[:250]}
 
-COMMUNITY COMPARISON:
-{global_top[:300]}
+AVERAGE STATS:
+{global_top[:250]}
 
-USER QUESTION: {query}
+QUESTION: {query}
 
-STRICT RULES:
-1. ONLY compare using the efficiency data above
-2. If no personal data, say "I need your trip history to analyze performance"
-3. Give rating (Excellent/Good/Average/Needs Work)
-4. Provide 2-3 specific tips
-5. Maximum 120 words
-6. BE HONEST about data limitations
+ANSWER FORMAT:
+- Rating: [Excellent/Good/Average/Needs Work]
+- Your efficiency vs average
+- 2 tips to improve
+- Max 80 words
 
 ANSWER:"""
         
         else:
-            # For general queries - force RAG usage
-            return f"""You are a helpful EV assistant. Answer ONLY using the data provided below.
+            # General queries - minimal prompt
+            return f"""Answer using ONLY this data:
 
-AVAILABLE DATA:
-{global_top[:350]}
+DATA:
+{global_top[:400]}
 
-USER QUESTION: {query}
+QUESTION: {query}
 
-STRICT RULES:
-1. ONLY answer if the data above is relevant
-2. If data doesn't match question, say "I don't have specific data about this. Try asking about: range prediction, route planning, or charging info"
-3. DO NOT make up facts about EVs, routes, or charging
-4. Keep under 100 words
-5. Be honest about limitations
+If data doesn't match question, say "I don't have data for this. Try: range, route, or charging questions."
+Max 70 words.
 
 ANSWER:"""
 
