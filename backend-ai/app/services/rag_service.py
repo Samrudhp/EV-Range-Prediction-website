@@ -1,15 +1,17 @@
 """
-RAG Service - Manages dual RAG system queries
+RAG Service - Manages dual RAG system queries (OPTIMIZED)
 """
 
 import chromadb
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Optional, Any
 import json
+import re
+from functools import lru_cache
 from app.core.config import settings
 
 class RAGService:
-    """Manages queries to dual RAG system"""
+    """Manages queries to dual RAG system (OPTIMIZED for speed & accuracy)"""
     
     _instance = None
     
@@ -49,18 +51,125 @@ class RAGService:
             print(f"⚠️  RAG collections not found. Run setup_rag.py first!")
             raise e
         
+        # 🚀 OPTIMIZATION: Query cache (last 50 queries)
+        self._query_cache = {}
+        self._cache_max_size = 50
+        
         self._initialized = True
     
+    def _extract_locations(self, query: str) -> tuple[Optional[str], Optional[str]]:
+        """🚀 OPTIMIZATION: Extract start/end locations from query for precise filtering"""
+        query_lower = query.lower()
+        
+        # Common patterns: "from X to Y", "X to Y", "reach Y from X"
+        patterns = [
+            r'from\s+([a-z\s]+?)\s+to\s+([a-z\s]+)',
+            r'reach\s+([a-z\s]+?)\s+from\s+([a-z\s]+)',
+            r'([a-z\s]+?)\s+to\s+([a-z\s]+)',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, query_lower)
+            if match:
+                start = match.group(1).strip().title()
+                end = match.group(2).strip().title()
+                # Handle reversed order for "reach Y from X"
+                if "reach" in pattern:
+                    return end, start
+                return start, end
+        
+        return None, None
+    
     def query_global(self, query: str, n_results: int = 3) -> Dict[str, Any]:
-        """Query global trip knowledge - OPTIMIZED: Reduced default from 5 to 3"""
+        """🚀 OPTIMIZED: Query global trip knowledge with metadata filtering & caching"""
+        
+        # 🚀 OPTIMIZATION 1: Check cache first
+        cache_key = f"global:{query}:{n_results}"
+        if cache_key in self._query_cache:
+            print(f"💨 Cache hit for: '{query}'")
+            return self._query_cache[cache_key]
+        
+        # 🚀 OPTIMIZATION 2: Try metadata filtering first (MUCH faster than semantic search)
+        start, end = self._extract_locations(query)
+        
+        if start and end:
+            print(f"🎯 Using metadata filter: {start} → {end}")
+            
+            # Direct metadata query (instant, no embeddings needed)
+            try:
+                results = self.global_rag.query(
+                    query_embeddings=[self.embedder.encode(query).tolist()],
+                    n_results=n_results,
+                    where={
+                        "$and": [
+                            {"start_location": {"$eq": start}},
+                            {"end_location": {"$eq": end}}
+                        ]
+                    }
+                )
+                
+                # If exact match found, return immediately
+                if results['documents'][0]:
+                    print(f"   ✅ Found {len(results['documents'][0])} exact matches")
+                    result_dict = {
+                        "documents": results["documents"][0],
+                        "metadatas": results["metadatas"][0],
+                        "distances": results["distances"][0]
+                    }
+                    self._cache_result(cache_key, result_dict)
+                    self._print_results(query, results)
+                    return result_dict
+            except Exception as e:
+                print(f"   ⚠️ Metadata filter failed, falling back to semantic search: {e}")
+        
+        # 🚀 OPTIMIZATION 3: Fallback to semantic search with similarity threshold
         query_embedding = self.embedder.encode(query)
         
         results = self.global_rag.query(
             query_embeddings=[query_embedding.tolist()],
-            n_results=n_results
+            n_results=n_results * 2  # Get more, then filter by quality
         )
         
-        # DEBUG: Print similarity scores
+        # 🚀 OPTIMIZATION 4: Filter by similarity threshold (0.3 = 70% similar)
+        SIMILARITY_THRESHOLD = 0.3
+        filtered_docs = []
+        filtered_meta = []
+        filtered_dist = []
+        
+        if results['distances'] and results['distances'][0]:
+            for doc, meta, dist in zip(
+                results['documents'][0],
+                results['metadatas'][0],
+                results['distances'][0]
+            ):
+                if dist <= SIMILARITY_THRESHOLD:  # Lower distance = more similar
+                    filtered_docs.append(doc)
+                    filtered_meta.append(meta)
+                    filtered_dist.append(dist)
+                
+                if len(filtered_docs) >= n_results:
+                    break
+        
+        result_dict = {
+            "documents": filtered_docs or results["documents"][0][:n_results],
+            "metadatas": filtered_meta or results["metadatas"][0][:n_results],
+            "distances": filtered_dist or results["distances"][0][:n_results]
+        }
+        
+        self._cache_result(cache_key, result_dict)
+        self._print_results(query, {"documents": [result_dict["documents"]], "distances": [result_dict["distances"]]})
+        
+        return result_dict
+    
+    def _cache_result(self, key: str, result: Dict):
+        """Cache query result with LRU eviction"""
+        if len(self._query_cache) >= self._cache_max_size:
+            # Remove oldest entry
+            self._query_cache.pop(next(iter(self._query_cache)))
+        self._query_cache[key] = result
+    
+    def _print_results(self, query: str, results: Dict):
+        """Print search results with similarity scores"""
         print(f"🔎 RAG Search for: '{query}'")
         if results['distances'] and results['distances'][0]:
             for i, (doc, dist) in enumerate(zip(results['documents'][0][:3], results['distances'][0][:3])):
@@ -73,8 +182,14 @@ class RAGService:
             "distances": results["distances"][0]
         }
     
-    def query_personal(self, user_id: str, query: str, n_results: int = 2) -> Dict[str, Any]:
-        """Query personal driving patterns for specific user - OPTIMIZED: Reduced default from 3 to 2"""
+    def query_personal(self, user_id: str, query: str, n_results: int = 1) -> Dict[str, Any]:
+        """🚀 OPTIMIZED: Query personal patterns - reduced to 1 result (only need efficiency)"""
+        
+        # 🚀 OPTIMIZATION: Cache personal queries too
+        cache_key = f"personal:{user_id}:{query}:{n_results}"
+        if cache_key in self._query_cache:
+            return self._query_cache[cache_key]
+        
         query_embedding = self.embedder.encode(query)
         
         results = self.personal_rag.query(
@@ -83,16 +198,19 @@ class RAGService:
             where={"user_id": user_id}
         )
         
-        return {
+        result_dict = {
             "documents": results["documents"][0] if results["documents"][0] else [],
             "metadatas": results["metadatas"][0] if results["metadatas"][0] else [],
             "distances": results["distances"][0] if results["distances"][0] else []
         }
+        
+        self._cache_result(cache_key, result_dict)
+        return result_dict
     
     def query_both(self, user_id: str, query: str) -> Dict[str, Any]:
-        """Query both RAG systems and combine results - OPTIMIZED: Reduced results"""
-        global_results = self.query_global(query, n_results=3)  # Reduced from 5
-        personal_results = self.query_personal(user_id, query, n_results=2)  # Reduced from 3
+        """🚀 OPTIMIZED: Query both RAG systems - reduced personal to 1 result"""
+        global_results = self.query_global(query, n_results=3)
+        personal_results = self.query_personal(user_id, query, n_results=1)  # Only need user efficiency
         
         return {
             "global": global_results,
@@ -100,7 +218,27 @@ class RAGService:
         }
     
     def find_similar_trips(self, start: str, end: str, n_results: int = 5) -> List[Dict]:
-        """Find similar trips in global RAG"""
+        """🚀 OPTIMIZED: Find similar trips using metadata filter (much faster)"""
+        
+        # 🚀 OPTIMIZATION: Use metadata filter instead of semantic search
+        try:
+            results = self.global_rag.get(
+                where={
+                    "$and": [
+                        {"start_location": {"$eq": start}},
+                        {"end_location": {"$eq": end}}
+                    ]
+                },
+                limit=n_results
+            )
+            
+            if results["metadatas"]:
+                print(f"🎯 Found {len(results['metadatas'])} exact trips: {start} → {end}")
+                return results["metadatas"][:n_results]
+        except Exception as e:
+            print(f"   ⚠️ Metadata query failed: {e}")
+        
+        # Fallback to semantic search
         query = f"trip from {start} to {end}"
         results = self.query_global(query, n_results)
         

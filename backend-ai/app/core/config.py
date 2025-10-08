@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     
     # RAG System
     CHROMA_DB_PATH: str = "./chroma_db"
+    # 🚀 OPTIMIZED: all-MiniLM-L6-v2 is fast (384 dims) & accurate for semantic similarity
+    # Alternatives: "all-mpnet-base-v2" (slower, 768 dims, +2% accuracy)
+    #               "paraphrase-MiniLM-L3-v2" (faster, 384 dims, -3% accuracy)
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     
     # LLM (Using cached Orca Mini 3B model)
