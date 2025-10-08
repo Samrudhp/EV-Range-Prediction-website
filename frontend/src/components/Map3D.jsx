@@ -1,33 +1,46 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { 
   OrbitControls, 
   PerspectiveCamera, 
   Stars, 
-  useTexture,
   Line,
   Text,
-  Billboard
+  Billboard,
+  Float
 } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Charging Station Marker
-function ChargingStation({ position, name, available }) {
+// Charging Station Marker Component
+function ChargingStation({ position, name, available, onClick }) {
   const [hovered, setHovered] = useState(false);
-  
+  const meshRef = useRef();
+
+  useFrame(({ clock }) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y = clock.getElapsedTime() * 0.5;
+    }
+  });
+
   return (
     <group position={position}>
       {/* Marker pole */}
       <mesh position={[0, 0.5, 0]}>
         <cylinderGeometry args={[0.05, 0.05, 1, 8]} />
-        <meshStandardMaterial color={available ? "#10b981" : "#ef4444"} />
+        <meshStandardMaterial 
+          color={available ? "#10b981" : "#ef4444"}
+          emissive={available ? "#10b981" : "#ef4444"}
+          emissiveIntensity={0.3}
+        />
       </mesh>
       
       {/* Marker head */}
       <mesh 
+        ref={meshRef}
         position={[0, 1.2, 0]}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
+        onClick={onClick}
       >
         <sphereGeometry args={[0.15, 16, 16]} />
         <meshStandardMaterial 
@@ -80,25 +93,23 @@ function PulsingRing({ position, color }) {
 // Animated Route Path
 function RoutePath({ points, color = "#3b82f6", animated = true }) {
   const [progress, setProgress] = useState(0);
-  const lineRef = useRef();
-  
+
   useFrame(() => {
     if (animated && progress < 1) {
       setProgress(prev => Math.min(prev + 0.005, 1));
     }
   });
-  
+
   const visiblePoints = animated 
     ? points.slice(0, Math.floor(points.length * progress))
     : points;
-  
+
   if (visiblePoints.length < 2) return null;
-  
+
   return (
     <>
       {/* Main route line */}
       <Line
-        ref={lineRef}
         points={visiblePoints}
         color={color}
         lineWidth={3}
@@ -131,32 +142,31 @@ function RoutePath({ points, color = "#3b82f6", animated = true }) {
 function MovingParticle({ points, progress, color }) {
   const particleRef = useRef();
   
-  useEffect(() => {
+  useFrame(() => {
     const index = Math.floor((points.length - 1) * progress);
     if (particleRef.current && points[index]) {
       particleRef.current.position.set(...points[index]);
     }
-  }, [progress, points]);
+  });
   
   return (
-    <mesh ref={particleRef}>
-      <sphereGeometry args={[0.1, 16, 16]} />
-      <meshStandardMaterial 
-        color={color}
-        emissive={color}
-        emissiveIntensity={1}
-      />
-    </mesh>
+    <Float speed={2} rotationIntensity={0.5}>
+      <mesh ref={particleRef}>
+        <sphereGeometry args={[0.1, 16, 16]} />
+        <meshStandardMaterial 
+          color={color}
+          emissive={color}
+          emissiveIntensity={1}
+        />
+      </mesh>
+    </Float>
   );
 }
 
 // Terrain/Ground Plane
 function Terrain() {
-  const meshRef = useRef();
-  
   return (
     <mesh 
-      ref={meshRef} 
       rotation={[-Math.PI / 2, 0, 0]} 
       position={[0, -0.1, 0]}
       receiveShadow
@@ -176,7 +186,7 @@ function Terrain() {
 function GridHelper() {
   return (
     <gridHelper 
-      args={[100, 50, "#3b82f6", "#1e293b"]} 
+      args={[100, 50, "#6366f1", "#1e293b"]} 
       position={[0, 0, 0]}
     />
   );
@@ -192,14 +202,16 @@ function CurrentLocationMarker({ position }) {
   
   return (
     <group position={position}>
-      <mesh ref={meshRef} position={[0, 0.5, 0]}>
-        <coneGeometry args={[0.3, 0.8, 4]} />
-        <meshStandardMaterial 
-          color="#f59e0b"
-          emissive="#f59e0b"
-          emissiveIntensity={0.5}
-        />
-      </mesh>
+      <Float speed={1.5} rotationIntensity={0.3}>
+        <mesh ref={meshRef} position={[0, 0.5, 0]}>
+          <coneGeometry args={[0.3, 0.8, 4]} />
+          <meshStandardMaterial 
+            color="#f59e0b"
+            emissive="#f59e0b"
+            emissiveIntensity={0.5}
+          />
+        </mesh>
+      </Float>
       
       <mesh position={[0, 0, 0]}>
         <cylinderGeometry args={[0.4, 0.4, 0.1, 32]} />
@@ -214,14 +226,15 @@ function CurrentLocationMarker({ position }) {
 }
 
 // Main 3D Scene
-function Scene({ routeData, chargingStations, currentLocation }) {
+function Scene({ routeData, chargingStations, currentLocation, onStationClick }) {
   return (
     <>
       {/* Lighting */}
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={0.4} />
       <pointLight position={[10, 10, 10]} intensity={1} castShadow />
       <pointLight position={[-10, -10, -10]} intensity={0.5} />
       <directionalLight position={[0, 10, 5]} intensity={0.5} castShadow />
+      <spotLight position={[0, 15, 0]} angle={0.3} intensity={0.5} />
       
       {/* Stars background */}
       <Stars 
@@ -260,6 +273,7 @@ function Scene({ routeData, chargingStations, currentLocation }) {
           position={station.position}
           name={station.name}
           available={station.available}
+          onClick={() => onStationClick && onStationClick(station)}
         />
       ))}
       
@@ -278,26 +292,26 @@ function Scene({ routeData, chargingStations, currentLocation }) {
   );
 }
 
-// Main Map3D Component
+// Main Map3D Component Export
 export default function Map3D({ 
   routeData, 
   chargingStations = [],
   currentLocation,
-  height = "600px",
-  className = ""
+  height = "700px",
+  className = "",
+  onStationClick
 }) {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Simulate loading
     const timer = setTimeout(() => setLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
-  
+
   return (
     <div className={`relative w-full ${className}`} style={{ height }}>
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl">
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl z-10">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mx-auto mb-4"></div>
             <p className="text-white text-lg">Loading 3D Map...</p>
@@ -319,6 +333,7 @@ export default function Map3D({
             routeData={routeData}
             chargingStations={chargingStations}
             currentLocation={currentLocation}
+            onStationClick={onStationClick}
           />
         </Canvas>
       </div>

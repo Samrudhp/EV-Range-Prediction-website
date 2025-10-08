@@ -1,3 +1,66 @@
+# Environment variables
 backend/.env
-
 .env.local
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+.next/
+out/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary documentation files
+CHANGES_SUMMARY.md
+FRONTEND_GUIDE.md
+IMPROVEMENT_ROADMAP.md
+MODEL_CACHE_INFO.md
+PROJECT_STATUS.md
+PROJECT_SUMMARY.md
+QUICK_REFERENCE.md
+QUICK_START.md
+RUNNING_GUIDE.md
+SETUP_GUIDE.md
+
+# Vector DB
+backend-ai/chroma_db/
+*.sqlite3
+
+# Model cache (optional - keep models local)
+# .cache/
+# *.gguf
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
