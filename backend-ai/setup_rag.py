@@ -80,6 +80,44 @@ Trip duration: {trip['duration_hours']} hours.
     return text
 
 
+def flatten_metadata(trip: Dict) -> Dict:
+    """Convert trip metadata to ChromaDB-compatible format (no nested objects/lists)"""
+    
+    # Convert charging_stops list to simple fields
+    num_stops = trip.get("num_charging_stops", 0)
+    charging_info = ""
+    if num_stops > 0 and "charging_stops" in trip:
+        stops = trip["charging_stops"]
+        networks = [s.get("network", "") for s in stops]
+        charging_info = ", ".join(networks[:3])  # First 3 networks as string
+    
+    return {
+        "trip_id": trip["trip_id"],
+        "user_id": trip["user_id"],
+        "date": trip["date"],
+        "start_location": trip["start_location"],
+        "end_location": trip["end_location"],
+        "distance_km": float(trip["distance_km"]),
+        "duration_hours": float(trip["duration_hours"]),
+        "start_battery_percent": int(trip["start_battery_percent"]),
+        "end_battery_percent": int(trip["end_battery_percent"]),
+        "energy_used_kwh": float(trip["energy_used_kwh"]),
+        "efficiency_kwh_per_100km": float(trip["efficiency_kwh_per_100km"]),
+        "weather": trip["weather"],
+        "temperature_c": int(trip["temperature_c"]),
+        "traffic": trip["traffic"],
+        "traffic_delay_mins": int(trip["traffic_delay_mins"]),
+        "driving_style": trip["driving_style"],
+        "avg_speed_kmh": int(trip["avg_speed_kmh"]),
+        "elevation_change_m": int(trip["elevation_change_m"]),
+        "regen_braking_usage": float(trip["regen_braking_usage"]),
+        "num_charging_stops": int(num_stops),
+        "charging_networks": charging_info,  # Flattened as string
+        "is_highway": bool(trip.get("is_highway", False)),
+        "avg_acceleration": float(trip.get("avg_acceleration", 0.0))
+    }
+
+
 def populate_global_rag(trips: List[Dict]):
     """Populate RAG 1 with all trip data"""
     
@@ -98,11 +136,14 @@ def populate_global_rag(trips: List[Dict]):
         # Generate embeddings
         embeddings = embedder.encode(texts, show_progress_bar=False)
         
+        # Flatten metadata (ChromaDB doesn't support nested objects/lists)
+        metadatas = [flatten_metadata(trip) for trip in batch]
+        
         # Add to collection
         global_collection.add(
             documents=texts,
             embeddings=embeddings.tolist(),
-            metadatas=batch,
+            metadatas=metadatas,
             ids=[trip["trip_id"] for trip in batch]
         )
         
@@ -186,22 +227,17 @@ def populate_personal_rag(users: List[Dict], all_trips: List[Dict]):
             # Create pattern text
             pattern_text = create_user_pattern_text(user_id, trips)
             
-            # Metadata includes user profile + trip summaries
+            # Metadata includes user profile + trip summaries (flattened for ChromaDB)
             metadata = {
                 "user_id": user_id,
                 "ev_model": user["ev_model"],
                 "driving_style": user["driving_style"],
-                "battery_health": user["battery_health"],
-                "avg_efficiency": user["avg_efficiency"],
+                "battery_health": float(user["battery_health"]),
+                "avg_efficiency": float(user["avg_efficiency"]),
                 "num_trips_analyzed": len(trips),
-                "recent_trips": [
-                    {
-                        "route": f"{t['start_location']}-{t['end_location']}",
-                        "efficiency": t["efficiency_kwh_per_100km"],
-                        "date": t["date"]
-                    }
-                    for t in trips[:5]  # Store last 5 in metadata
-                ]
+                # Flatten recent trips as simple strings instead of nested objects
+                "recent_routes": ", ".join([f"{t['start_location']}-{t['end_location']}" for t in trips[:5]]),
+                "recent_dates": ", ".join([t["date"] for t in trips[:5]])
             }
             
             texts.append(pattern_text)
@@ -262,6 +298,8 @@ def verify_rag_systems():
 def main():
     """Main setup function"""
     
+    global global_collection, personal_collection
+    
     print("=" * 70)
     print("🚀 EV Range Prediction - Dual RAG System Setup")
     print("=" * 70)
@@ -300,7 +338,7 @@ def main():
     print("  1. Query Global RAG for community trip insights")
     print("  2. Query Personal RAG for individual user patterns")
     print("  3. Combine both for personalized range predictions")
-    print("\n💡 Next: Run the FastAPI server with: uvicorn main:app --reload")
+    print("\n💡 Next: Run the FastAPI server with: python -m app.main")
 
 
 if __name__ == "__main__":

@@ -4,9 +4,9 @@ pydantic==2.10.3
 pydantic-settings==2.6.1
 python-dotenv==1.0.1
 
-# Database
+# Database (Motor 3.6.0 requires pymongo <4.10)
 motor==3.6.0
-pymongo==4.10.1
+pymongo==4.9.1
 
 # AI/ML
 gpt4all==2.8.2
