@@ -1,20 +1,19 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import Map3D from '../components/Map3D';
-import { FaRoad, FaBolt, FaChargingStation, FaMapMarkedAlt } from 'react-icons/fa';
+import InteractiveMap from '../components/InteractiveMap';
+import { FaRoad, FaBolt, FaChargingStation } from 'react-icons/fa';
 
-// Sample route data - Mumbai to Pune
+// Sample route data - Mumbai to Pune (Real coordinates)
 const sampleRoutes = {
   routes: [
     {
       points: [
-        [0, 0, 0],
-        [2, 0.2, 2],
-        [4, 0.3, 3],
-        [6, 0.4, 4],
-        [8, 0.2, 6],
-        [10, 0.1, 8],
-        [12, 0, 10],
+        [19.0760, 72.8777],  // Mumbai
+        [19.1136, 73.0973],  // Panvel
+        [18.9894, 73.2933],  // Lonavala
+        [18.7537, 73.4263],  // Khandala
+        [18.5679, 73.7143],  // Talegaon
+        [18.5204, 73.8567],  // Pune
       ],
       color: "#3b82f6",
       animated: true
@@ -22,32 +21,36 @@ const sampleRoutes = {
   ]
 };
 
-// Sample charging stations
+// Sample charging stations with real coordinates
 const sampleStations = [
   { 
-    position: [3, 0, 3], 
+    position: [18.9894, 73.2933], 
     name: "Lonavala Fast Charger", 
     available: true,
-    network: "Fortum",
-    power: "150 kW"
+    network: "Fortum Charge & Drive",
+    power: "150 kW DC",
+    distance: "85 km from Mumbai"
   },
   { 
-    position: [7, 0, 5], 
+    position: [18.7537, 73.4263], 
     name: "Khandala Supercharger", 
     available: true,
-    network: "Tata Power",
-    power: "120 kW"
+    network: "Tata Power EZ Charge",
+    power: "120 kW DC",
+    distance: "110 km from Mumbai"
   },
   { 
-    position: [10, 0, 8], 
-    name: "Pune City Center", 
+    position: [18.5679, 73.7143], 
+    name: "Talegaon City Center", 
     available: false,
     network: "ChargePoint",
-    power: "50 kW"
+    power: "50 kW DC",
+    distance: "145 km from Mumbai"
   },
 ];
 
-const currentLocation = [0, 0, 0];
+const currentLocation = [19.0760, 72.8777]; // Mumbai
+const destination = [18.5204, 73.8567]; // Pune
 
 export default function MapPage() {
   const [showRoute, setShowRoute] = useState(true);
@@ -73,10 +76,10 @@ export default function MapPage() {
           className="mb-8"
         >
           <h1 className="text-5xl md:text-6xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            3D Route Visualization
+            Interactive Route Map
           </h1>
           <p className="text-gray-600 text-lg">
-            Interactive 3D map with route planning and charging stations
+            Real map with route planning and charging stations
           </p>
         </motion.div>
 
@@ -112,6 +115,11 @@ export default function MapPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setShowRoute(true);
+                  setShowStations(true);
+                  setSelectedStation(null);
+                }}
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors shadow-md"
               >
                 Reset View
@@ -120,16 +128,18 @@ export default function MapPage() {
           </div>
         </motion.div>
 
-        {/* 3D Map */}
+        {/* Map */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4 }}
+          className="backdrop-blur-xl bg-white/60 border-2 border-blue-200/50 rounded-3xl p-2 shadow-2xl overflow-hidden"
         >
-          <Map3D
+          <InteractiveMap
             routeData={showRoute ? sampleRoutes : null}
             chargingStations={showStations ? sampleStations : []}
             currentLocation={currentLocation}
+            destination={destination}
             height="700px"
             onStationClick={handleStationClick}
           />
