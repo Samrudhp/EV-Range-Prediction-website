@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import InteractiveMap from '../components/InteractiveMap';
 import useStore from '../store/useStore';
+import { calculateDistance } from '../utils/locationUtils';
 import { FaRoad, FaBolt, FaChargingStation, FaMapMarkerAlt } from 'react-icons/fa';
 
 // Sample route data - Mumbai to Pune (Real coordinates) - Used as fallback
@@ -64,6 +65,42 @@ export default function MapPage() {
   const currentLocation = sourceLocation || defaultCurrentLocation;
   const destination = destinationLocation || defaultDestination;
   const stations = chargingStations.length > 0 ? chargingStations : sampleStations;
+
+  // Calculate dynamic trip statistics
+  const tripStats = useMemo(() => {
+    const distance = calculateDistance(currentLocation, destination);
+    const numStops = stations.filter(s => s.available !== false).length;
+    
+    // Estimate battery needed (assume 15 kWh/100km average)
+    const batteryNeeded = Math.round((distance * 15) / 100);
+    const currentBattery = 75; // Assume 75% starting
+    const bufferNeeded = batteryNeeded + 10; // 10% safety buffer
+    
+    // Estimate time (assume 60 km/h average with charging)
+    const drivingTime = distance / 60;
+    const chargingTime = numStops * 0.5; // 30 min per stop
+    const totalTime = drivingTime + chargingTime;
+    
+    // Get city names from coordinates (reverse lookup)
+    const getLocationName = (coords) => {
+      // Try to find matching city in the original data
+      if (routeData && sourceLocation && destinationLocation) {
+        // We have AI-generated data with city names
+        return null; // Will use default display
+      }
+      return 'Location';
+    };
+    
+    return {
+      distance,
+      batteryNeeded,
+      bufferNeeded,
+      currentBattery,
+      numStops,
+      totalTime,
+      stationNames: stations.slice(0, 2).map(s => s.name.split(' ')[0]).join(', ')
+    };
+  }, [currentLocation, destination, stations, routeData, sourceLocation, destinationLocation]);
 
   const handleStationClick = (station) => {
     setSelectedStation(station);
@@ -185,8 +222,10 @@ export default function MapPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800">Total Distance</h3>
               </div>
-              <p className="text-4xl font-bold text-gray-900 mb-2">164 km</p>
-              <p className="text-blue-600">Mumbai → Pune</p>
+              <p className="text-4xl font-bold text-gray-900 mb-2">{tripStats.distance} km</p>
+              <p className="text-blue-600">
+                {routeData ? 'AI-Generated Route' : 'Sample Route'}
+              </p>
             </div>
           </div>
 
@@ -200,8 +239,10 @@ export default function MapPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800">Battery Required</h3>
               </div>
-              <p className="text-4xl font-bold text-gray-900 mb-2">45%</p>
-              <p className="text-green-600">Current: 75% (30% buffer)</p>
+              <p className="text-4xl font-bold text-gray-900 mb-2">~{tripStats.batteryNeeded}%</p>
+              <p className="text-green-600">
+                Current: {tripStats.currentBattery}% ({tripStats.currentBattery - tripStats.bufferNeeded}% buffer)
+              </p>
             </div>
           </div>
 
@@ -215,8 +256,10 @@ export default function MapPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800">Charging Stops</h3>
               </div>
-              <p className="text-4xl font-bold text-gray-900 mb-2">2</p>
-              <p className="text-purple-600">Lonavala, Khandala</p>
+              <p className="text-4xl font-bold text-gray-900 mb-2">{tripStats.numStops}</p>
+              <p className="text-purple-600">
+                {tripStats.stationNames || 'No stations on route'}
+              </p>
             </div>
           </div>
         </motion.div>
