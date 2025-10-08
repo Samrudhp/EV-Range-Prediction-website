@@ -60,6 +60,13 @@ class RAGService:
             n_results=n_results
         )
         
+        # DEBUG: Print similarity scores
+        print(f"🔎 RAG Search for: '{query}'")
+        if results['distances'] and results['distances'][0]:
+            for i, (doc, dist) in enumerate(zip(results['documents'][0][:3], results['distances'][0][:3])):
+                similarity = 1 - dist  # Convert distance to similarity
+                print(f"   Result {i+1}: Similarity={similarity:.3f}, Preview={doc[:100]}...")
+        
         return {
             "documents": results["documents"][0],
             "metadatas": results["metadatas"][0],
